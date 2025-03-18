@@ -4,4 +4,16 @@
     RewriteCond %{REQUEST_URI} ^/api/auth/(.*)$ [NC]
     RewriteRule ^(.*)$ /auth/public/index.php/$1 [L]
 
+    RewriteCond %{REQUEST_URI} ^/api/products(.*)$ [NC]
+    RewriteRule ^(.*)$ /product/public/index.php/$1 [L]
+
+    RewriteCond %{REQUEST_URI} ^/api/product-categories(.*)$ [NC]
+    RewriteRule ^(.*)$ /product/public/index.php/$1 [L]
+
+    RewriteCond %{REQUEST_URI} ^/api/brands(.*)$ [NC]
+    RewriteRule ^(.*)$ /product/public/index.php/$1 [L]
+
+    RewriteCond %{REQUEST_URI} ^/api/reviews(.*)$ [NC]
+    RewriteRule ^(.*)$ /product/public/index.php/$1 [L]
+
 </IfModule>
