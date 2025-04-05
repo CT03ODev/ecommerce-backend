@@ -1,0 +1,40 @@
+@import './animation.scss';
+
+html {
+    font-family: 'Inter', sans-serif;
+}
+
+.ql-container {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+}
+
+body {
+    overflow: overlay;
+
+    ::-webkit-scrollbar {
+        width: 0.5rem !important;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgb(156, 163, 175, 0.5);
+        border-radius: 999999px;
+    }
+}
+
+.custom-scrollbar {
+    ::-webkit-scrollbar {
+        width: 0.375rem !important;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.5);
+        border-radius: 999999px;
+    }
+}
+
+.container {
+    margin: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}

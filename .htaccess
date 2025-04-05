@@ -16,4 +16,7 @@
     RewriteCond %{REQUEST_URI} ^/api/reviews(.*)$ [NC]
     RewriteRule ^(.*)$ /product/public/index.php/$1 [L]
 
+    RewriteCond %{REQUEST_URI} ^/(.*)$ [NC]
+    RewriteRule ^(.*)$ /admin/public/$1 [L]
+
 </IfModule>

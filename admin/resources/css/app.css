@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    ::selection {
+        color: white;
+        @apply bg-primary-500;
+    }
+
+    [x-cloak] {
+        @apply !hidden;
+    }
+
+    .text-default {
+        @apply text-gray-900 dark:text-white;
+    }
+
+    .text-content {
+        @apply text-gray-500 dark:text-gray-400;
+    }
+
+    .text-primary {
+        @apply text-primary-600 dark:text-primary-500;
+    }
+
+    .bg-primary {
+        @apply bg-primary-600 dark:bg-primary-500;
+    }
+
+    .border-primary {
+        @apply border-primary-600 dark:border-primary-500;
+    }
+
+    .badge {
+        @apply bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-100;
+    }
+}
+
+@layer components {
+    /* custom style for content */
+    .content p {
+        @apply mb-6 md:mb-8 text-[1.0625rem] text-gray-900 dark:text-white;
+    }
+    
+    .content a {
+        @apply text-primary-500 underline transition duration-100 hover:text-primary-600 active:text-primary-600;
+    }
+
+    .content h2, .content h2 strong {
+        @apply mb-2 font-semibold text-gray-800 dark:text-white text-2xl md:mb-4 scroll-mt-16;
+    }
+    
+    .content h3, .content h3 strong {
+        @apply mb-2 font-semibold text-gray-800 dark:text-white text-xl md:mb-4 scroll-mt-16;
+    }
+
+    .content h4, .content h4 strong {
+        @apply mb-2 font-semibold text-gray-800 dark:text-white text-lg md:mb-4 scroll-mt-16;
+    }
+    
+    .content img {
+        @apply inline-block min-w-[36rem] mb-2;
+    }
+
+    .content figure figcaption {
+        @apply mb-6 text-center;
+    }
+
+    .content figure.image {
+        text-align: center;
+    }
+    
+    .content ul {
+        @apply mb-6 list-inside list-disc md:mb-8;
+    }
+    
+    .content li {
+        @apply list-disc list-inside;
+    }
+    
+    .content table {
+        @apply mb-2 table-fixed border border-gray-500 dark:border-gray-400 text-gray-900 dark:text-white;
+    }
+    
+    .content th, td {
+        @apply p-2 border border-gray-500 dark:border-gray-400;
+    }
+
+    .content blockquote {
+        @apply mb-6 border-l-4 pl-4 italic text-gray-500 dark:text-gray-400 md:mb-8 md:pl-6;
+    }
+
+    .content iframe {
+        @apply mb-6 w-full h-[80vh];
+    }
+    
+    /* custom style for MathML */
+    .content mjx-container {
+        @apply text-gray-900 dark:text-white;
+    }
+
+
+    /* for breadcrumb */
+    .breadcrumbs ol li:not(:last-child) div a {
+        @apply whitespace-nowrap;
+    }
+
+    .breadcrumbs ol li:last-child div a {
+        @apply line-clamp-1 text-primary;
+    }
+}
