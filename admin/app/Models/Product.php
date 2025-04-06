@@ -13,7 +13,21 @@ class Product extends Model
     use Sluggable;
     use ModelBlamer;
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'is_published'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+    protected $appends = ['thumbnail_url', 'price'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'thumbnail',
+        'content',
+        'category_id',
+        'brand_id',
+        'is_published',
+        'created_by',
+        'updated_by',
+        'deleted_by'
+    ];
 
     public function category()
     {
@@ -38,5 +52,20 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function getThumbnailUrlAttribute()
+    {
+        $baseUrl = config('app.url');
+
+        return $this->thumbnail 
+            ? $baseUrl . '/storage/' . $this->thumbnail 
+            : $baseUrl . '/images/default-thumbnail.jpg';
+    }
+
+    public function getPriceAttribute()
+    {
+        $firstVariant = $this->variants()->first();
+        return $firstVariant ? $firstVariant->price : null;
     }
 }

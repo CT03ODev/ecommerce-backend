@@ -19,8 +19,6 @@ return new class extends Migration
             $table->string('thumbnail');
             $table->text('content');
             $table->integer('view_count')->default(0);
-            $table->decimal('weight', 8, 2)->nullable();
-            $table->decimal('price', 10, 2);
 
             $table->foreignId('category_id');
             $table->foreign('category_id')->references('id')->on('product_categories')->onDelete('cascade');

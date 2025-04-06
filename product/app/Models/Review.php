@@ -13,7 +13,7 @@ class Review extends Model
     use Sluggable;
     use ModelBlamer;
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'is_published'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 
     public function user()
     {

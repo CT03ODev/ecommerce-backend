@@ -30,7 +30,7 @@ trait ModelBlamer
 
         // updating updated_by when model is updated
         static::updating(function ($model) {
-            if (!$model->isDirty('updated_by') && auth()->user()) {
+            if (Schema::hasColumn($model->getTable(), 'updated_by') && !$model->isDirty('updated_by') && auth()->user()) {
                 $model->updated_by = auth()->user()->id;
             }
         });

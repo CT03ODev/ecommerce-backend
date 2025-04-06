@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return "<h1>Apache Server!</h1>";
+    return "<h1>MTW Server!</h1>";
 })->name('home');
 
 Route::prefix('admin')->group(function () {

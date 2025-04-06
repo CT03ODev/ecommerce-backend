@@ -10,10 +10,20 @@ use Illuminate\Database\Eloquent\Model;
 class ProductVariant extends Model
 {
     use HasFactory;
-    use Sluggable;
     use ModelBlamer;
 
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = [
+        'size',
+        'color',
+        'price',
+        'weight',
+        'stock_quantity',
+        'product_id',
+        'created_by',
+        'updated_by',
+        'deleted_by'
+    ];
 
     public function product()
     {
