@@ -17,12 +17,10 @@ class ProductController extends Controller
                 $query->orderBy('price', 'asc'); // Lấy giá đầu tiên theo thứ tự tăng dần
             }]);
 
-        // Tìm kiếm theo tên (q)
         if ($request->has('q') && $request->q) {
             $query->where('name', 'like', '%' . $request->q . '%');
         }
 
-        // Lọc theo category
         if ($request->has('category') && $request->category) {
             $category = ProductCategory::where('slug', $request->category)->first();
             if ($category) {
@@ -30,7 +28,6 @@ class ProductController extends Controller
             }
         }
 
-        // Lọc theo brand
         if ($request->has('brand') && $request->brand) {
             $brand = Brand::where('slug', $request->brand)->first();
             if ($brand) {
@@ -38,23 +35,19 @@ class ProductController extends Controller
             }
         }
 
-        // Sắp xếp theo giá của ProductVariant đầu tiên
-        if ($request->has('sort_price') && in_array($request->sort_price, ['asc', 'desc'])) {
+        if ($request->has('sort') && $request->sort === 'price') {
             $query->join('product_variants', 'products.id', '=', 'product_variants.product_id')
                 ->select('products.*', DB::raw('MIN(product_variants.price) as min_price'))
-                ->groupBy('products.id') // Nhóm theo sản phẩm để tránh trùng lặp
-                ->orderBy('min_price', $request->sort_price);
+                ->groupBy('products.id')
+                ->orderBy('min_price', $request->sort_type ?? 'asc');
         }
 
-        // Sắp xếp theo thời gian tạo
-        if ($request->has('sort_created') && in_array($request->sort_created, ['asc', 'desc'])) {
-            $query->orderBy('created_at', $request->sort_created);
+        if ($request->has('sort') && $request->sort === 'created_at') {
+            $query->orderBy('created_at', $request->sort_type ?? 'asc');
         }
 
-        // Lấy số lượng sản phẩm trên mỗi trang (mặc định là 12)
         $limit = $request->get('limit', 12);
 
-        // Phân trang
         $products = $query->paginate($limit);
 
         return response()->json($products);

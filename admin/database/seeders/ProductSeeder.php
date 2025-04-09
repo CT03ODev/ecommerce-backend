@@ -53,7 +53,7 @@ class ProductSeeder extends Seeder
             for ($j = 1; $j <= 3; $j++) {
                 $variants[] = [
                     'product_id' => $productId,
-                    'size' => "Size " . rand(1, 3) . 'x ' . rand(1, 3) . 'm',
+                    'size' => "Size " . rand(1, 3) . 'x' . rand(1, 3) . 'm',
                     'price' => rand(100, 1000) * 10, 
                     'stock_quantity' => rand(10, 100), 
                     'created_at' => now(),

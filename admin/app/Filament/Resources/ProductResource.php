@@ -78,10 +78,9 @@ class ProductResource extends Resource
                                 TextInput::make('weight')
                                     ->label('Weight')
                                     ->numeric(),
-                                TextInput::make('price')
-                                    ->label('Price')
-                                    ->numeric()
-                                    ->required(),
+                                TextInput::make('color')
+                                    ->label('Color')
+                                    ->numeric(),
                                 TextInput::make('price')
                                     ->label('Price')
                                     ->numeric()
