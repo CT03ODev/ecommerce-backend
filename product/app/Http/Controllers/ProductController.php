@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -36,10 +37,12 @@ class ProductController extends Controller
         }
 
         if ($request->has('sort') && $request->sort === 'price') {
-            $query->join('product_variants', 'products.id', '=', 'product_variants.product_id')
-                ->select('products.*', DB::raw('MIN(product_variants.price) as min_price'))
-                ->groupBy('products.id')
-                ->orderBy('min_price', $request->sort_type ?? 'asc');
+            $query->addSelect([
+                'first_variant_price' => ProductVariant::select('price')
+                    ->whereColumn('product_variants.product_id', 'products.id')
+                    ->limit(1),
+            ])
+            ->orderBy('first_variant_price', $request->sort_type ?? 'asc');
         }
 
         if ($request->has('sort') && $request->sort === 'created_at') {
