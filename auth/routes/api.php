@@ -25,6 +25,11 @@ Route::prefix('auth')->group(function () {
         Route::post('/profile/update', [AuthController::class, 'updateProfile']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/refresh', [AuthController::class, 'refresh']);
+        Route::put('/update-password', [AuthController::class, 'updatePassword']);
+        Route::get('/user/addresses', [AuthController::class, 'addresses']);
+        Route::post('/user/addresses', [AuthController::class, 'createAddress']);
+        Route::put('/user/addresses/{id}', [AuthController::class, 'updateAddress']);
+        Route::delete('/user/addresses/{id}', [AuthController::class, 'deleteAddress']);
     });
 
     Route::fallback(function () {
