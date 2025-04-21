@@ -16,6 +16,12 @@
     RewriteCond %{REQUEST_URI} ^/api/reviews(.*)$ [NC]
     RewriteRule ^(.*)$ /product/public/index.php/$1 [L]
 
+    RewriteCond %{REQUEST_URI} ^/api/order(.*)$ [NC]
+    RewriteRule ^(.*)$ /order/public/index.php/$1 [L]
+
+    RewriteCond %{REQUEST_URI} ^/api/payment(.*)$ [NC]
+    RewriteRule ^(.*)$ /order/public/index.php/$1 [L]
+
     RewriteCond %{REQUEST_URI} ^/(.*)$ [NC]
     RewriteRule ^(.*)$ /admin/public/$1 [L]
 

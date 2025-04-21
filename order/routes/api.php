@@ -1,0 +1,57 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
+use Illuminate\Http\Request;
+use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\OrderItemController;
+use App\Http\Controllers\API\PaymentController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+
+Route::prefix('auth')->group(function () {
+    // Order routes
+    Route::middleware('auth:api')->group(function () {
+        // Orders
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::post('/orders', [OrderController::class, 'store']);
+        Route::get('/orders/{id}', [OrderController::class, 'show']);
+        Route::put('/orders/{id}', [OrderController::class, 'update']);
+        Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
+        Route::get('/my-orders', [OrderController::class, 'myOrders']);
+        
+        // Order Items
+        Route::post('/order-items', [OrderItemController::class, 'store']);
+        Route::put('/order-items/{id}', [OrderItemController::class, 'update']);
+        Route::delete('/order-items/{id}', [OrderItemController::class, 'destroy']);
+        
+        // Payments
+        Route::get('/payments', [PaymentController::class, 'index']);
+        Route::post('/payments', [PaymentController::class, 'store']);
+        Route::get('/payments/{id}', [PaymentController::class, 'show']);
+        Route::put('/payments/{id}/status', [PaymentController::class, 'updateStatus']);
+        Route::get('/orders/{orderId}/payments', [PaymentController::class, 'getOrderPayments']);
+    });
+    
+    Route::fallback(function () {
+        return response()->json([
+            'message' => 'Route not found. Please check the API documentation.',
+            'status' => 404
+        ], 404);
+    });
+});
+
