@@ -15,10 +15,18 @@ class ProductCategory extends Model
 
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
     protected $appends = ['thumbnail_url'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'thumbnail',
+        'content',
+        'is_published',
+    ];
 
     public function products()
     {
-        return $this->hasMany(Product::class);
+        return $this->hasMany(Product::class, 'category_id');
     }
 
     public function getThumbnailUrlAttribute()

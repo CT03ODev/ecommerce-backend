@@ -3,25 +3,34 @@
 namespace App\Models;
 
 use App\Models\Traits\ModelBlamer;
-use App\Models\Traits\Sluggable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductImage extends Model
 {
     use HasFactory;
-    use Sluggable;
     use ModelBlamer;
 
-    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = [
+        'image',
+        'sort_order',
+        'product_variant_id',
+        'created_by',
+        'updated_by',
+        'deleted_by'
+    ];
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+    protected $appends = ['image_url'];
 
     public function variant()
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image 
+            ? asset('storage/' . $this->image) 
+            : asset('images/default-product-image.jpg');
     }
 }

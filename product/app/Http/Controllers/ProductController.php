@@ -59,7 +59,7 @@ class ProductController extends Controller
     public function show(String $slug)
     {
         $product = Product::where(['slug' => $slug, 'is_published' => 1])
-            ->with(['category', 'brand', 'images', 'variants', 'reviews.user'])
+            ->with(['category', 'brand', 'variants', 'reviews.user'])
             ->first();
 
         if (!$product) {
