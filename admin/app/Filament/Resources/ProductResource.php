@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Brand;
 use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -78,9 +79,9 @@ class ProductResource extends Resource
                                 TextInput::make('weight')
                                     ->label('Weight')
                                     ->numeric(),
-                                TextInput::make('color')
+                                ColorPicker::make('color')
                                     ->label('Color')
-                                    ->numeric(),
+                                    ->required(),
                                 TextInput::make('price')
                                     ->label('Price')
                                     ->numeric()
@@ -89,6 +90,30 @@ class ProductResource extends Resource
                                     ->label('Stock')
                                     ->numeric()
                                     ->required(),
+                                FileUpload::make('images')
+                                    ->label('Images')
+                                    ->multiple()
+                                    ->image()
+                                    ->imageEditor()
+                                    ->directory('images/products/variants')
+                                    ->visibility('public')
+                                    ->reorderable()
+                                    ->maxFiles(5)
+                                    ->columnSpanFull()
+                                    ->dehydrated(false)
+                                    ->saveRelationshipsUsing(function ($component, $state, $record) {
+                                        $record->images()->delete();
+                                        $index = 0;
+                                        foreach ($state as $image) {
+                                            $record->images()->create([
+                                                'image' => $image,
+                                                'sort_order' => $index++,
+                                            ]);
+                                        }
+                                    })
+                                    ->formatStateUsing(function ($component, $record, $state) {
+                                        return $record->images->pluck('image')->toArray();
+                                    }),
                             ])
                             ->label('Add Variant')
                             ->columns(3),

@@ -6,30 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::create('product_images', function (Blueprint $table) {
             $table->id();
-            $table->string('image_path');
-
-            $table->foreignId('product_id');
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-
-            $table->foreignId('product_variant_id');
-            $table->foreign('product_variant_id')->references('id')->on('product_variants')->onDelete('cascade');
-
-            $table->softDeletes();
+            $table->foreignId('product_variant_id')->constrained()->cascadeOnDelete();
+            $table->string('image');
+            $table->integer('sort_order')->default(0);
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->foreignId('deleted_by')->nullable()->constrained('users');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('product_images');
     }
