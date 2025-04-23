@@ -1,13 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Enum;
 
 class OrderController extends Controller
@@ -39,31 +42,90 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
             'address_id' => 'required|exists:addresses,id',
-            'total_amount' => 'required|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'shipping_amount' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
+            'variant_ids' => 'required|array',
+            'variant_ids.*' => 'required|exists:product_variants,id',
+            'quantities' => 'required|array',
+            'quantities.*' => 'required|integer|min:1',
+            'notes' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $order = new Order();
-        $order->order_number = 'ORD-' . Str::random(10);
-        $order->user_id = $request->user_id;
-        $order->address_id = $request->address_id;
-        $order->total_amount = $request->total_amount;
-        $order->tax_amount = $request->tax_amount ?? 0;
-        $order->shipping_amount = $request->shipping_amount ?? 0;
-        $order->discount_amount = $request->discount_amount ?? 0;
-        $order->status = OrderStatus::PENDING->value;
-        $order->notes = $request->notes;
-        $order->created_by = $request->user()->id ?? null;
-        $order->save();
+        try {
+            DB::beginTransaction();
 
-        return response()->json($order, 201);
+            // Tính tổng tiền từ các variants
+            $subtotal = 0;
+            $variantsData = [];
+
+            foreach ($request->variant_ids as $index => $variantId) {
+                $variant = ProductVariant::findOrFail($variantId);
+                $quantity = $request->quantities[$index] ?? 1;
+
+                // Kiểm tra số lượng tồn kho
+                if ($variant->stock_quantity < $quantity) {
+                    throw new \Exception("Insufficient stock for variant ID: {$variantId}");
+                }
+
+                $itemTotal = $variant->price * $quantity;
+                $subtotal += $itemTotal;
+
+                $variantsData[] = [
+                    'variant' => $variant,
+                    'quantity' => $quantity
+                ];
+            }
+
+            // Tính các khoản phí
+            $tax_amount = $subtotal * 0.05; // 5% tax
+            $shipping_amount = 10; // $10 shipping fee
+            $discount_amount = 0; // No discount for now
+            $total_amount = $subtotal + $tax_amount + $shipping_amount - $discount_amount;
+
+            // Tạo order
+            $order = new Order();
+            $order->order_number = 'ORD-' . Str::random(10);
+            $order->user_id = $request->user_id;
+            $order->address_id = $request->address_id;
+            $order->total_amount = $total_amount;
+            $order->tax_amount = $tax_amount;
+            $order->shipping_amount = $shipping_amount;
+            $order->discount_amount = $discount_amount;
+            $order->status = OrderStatus::PENDING->value;
+            $order->notes = $request->notes;
+            $order->created_by = $request->user()->id ?? null;
+            $order->save();
+
+            // Tạo order items và cập nhật tồn kho
+            foreach ($variantsData as $data) {
+                $variant = $data['variant'];
+                $quantity = $data['quantity'];
+
+                // Tạo order item
+                $orderItem = new OrderItem([
+                    'order_id' => $order->id,
+                    'product_id' => $variant->product_id,
+                    'variant_id' => $variant->id,
+                    'quantity' => $quantity,
+                    'unit_price' => $variant->price,
+                    'total_price' => $variant->price * $quantity,
+                ]);
+                $orderItem->save();
+
+                // Cập nhật số lượng tồn kho
+                $variant->stock_quantity -= $quantity;
+                $variant->save();
+            }
+
+            DB::commit();
+            return response()->json($order->load('orderItems'), 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     /**

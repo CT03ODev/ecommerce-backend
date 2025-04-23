@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -15,8 +14,14 @@ class ProductController extends Controller
     {
         $query = Product::where('is_published', 1)
             ->with(['category', 'brand', 'variants' => function ($query) {
-                $query->orderBy('price', 'asc'); // Lấy giá đầu tiên theo thứ tự tăng dần
+                $query->orderBy('price', 'asc');
             }]);
+
+        // Xử lý lọc theo danh sách ids
+        if ($request->has('ids')) {
+            $ids = explode(',', $request->ids);
+            $query->whereIn('id', $ids);
+        }
 
         if ($request->has('q') && $request->q) {
             $query->where('name', 'like', '%' . $request->q . '%');

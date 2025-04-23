@@ -55,6 +55,7 @@ class ProductSeeder extends Seeder
                     'product_id' => $productId,
                     'size' => "Size " . rand(1, 3) . 'x' . rand(1, 3) . 'm',
                     'price' => rand(100, 1000) * 10, 
+                    'color' => '#ADACAE', 
                     'stock_quantity' => rand(10, 100), 
                     'created_at' => now(),
                     'updated_at' => now(),
