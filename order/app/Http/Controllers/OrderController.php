@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -23,7 +25,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $userId = $request->user()->id;
-        $orders = Order::with(['orderItems', 'payments'])
+        $orders = Order::with(['orderItems'])
             ->where('user_id', $userId)
             ->latest()
             ->get();
@@ -40,12 +42,12 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
             'address_id' => 'required|exists:addresses,id',
             'variant_ids' => 'required|array',
             'variant_ids.*' => 'required|exists:product_variants,id',
             'quantities' => 'required|array',
             'quantities.*' => 'required|integer|min:1',
+            'payment_method' => ['required', new Enum(PaymentMethod::class)],
             'notes' => 'nullable|string'
         ]);
 
@@ -54,8 +56,6 @@ class OrderController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-
             // Tính tổng tiền từ các variants
             $subtotal = 0;
             $variantsData = [];
@@ -84,48 +84,135 @@ class OrderController extends Controller
             $discount_amount = 0; // No discount for now
             $total_amount = $subtotal + $tax_amount + $shipping_amount - $discount_amount;
 
-            // Tạo order
-            $order = new Order();
-            $order->order_number = 'ORD-' . Str::random(10);
-            $order->user_id = $request->user_id;
-            $order->address_id = $request->address_id;
-            $order->total_amount = $total_amount;
-            $order->tax_amount = $tax_amount;
-            $order->shipping_amount = $shipping_amount;
-            $order->discount_amount = $discount_amount;
-            $order->status = OrderStatus::PENDING->value;
-            $order->notes = $request->notes;
-            $order->created_by = $request->user()->id ?? null;
-            $order->save();
+            // Chuyển đổi sang VND cho VNPAY (1 USD = 24,500 VND)
+            $total_amount_vnd = round($total_amount * 24500);
 
-            // Tạo order items và cập nhật tồn kho
-            foreach ($variantsData as $data) {
-                $variant = $data['variant'];
-                $quantity = $data['quantity'];
+            DB::beginTransaction();
+            try {
+                // Tạo order với trạng thái pending_payment cho VNPAY
+                $order = new Order();
+                $order->order_number = 'ORD-' . strtoupper(Str::random(10));
+                $order->user_id = $request->user()->id;
+                $order->address_id = $request->address_id;
+                $order->total_amount = $total_amount;
+                $order->tax_amount = $tax_amount;
+                $order->shipping_amount = $shipping_amount;
+                $order->discount_amount = $discount_amount;
+                $order->status = $request->payment_method === PaymentMethod::VNPAY->value 
+                    ? OrderStatus::PENDING_PAYMENT->value 
+                    : OrderStatus::PENDING->value;
+                $order->notes = $request->notes;
+                $order->created_by = $request->user()->id;
+                $order->save();
 
-                // Tạo order item
-                $orderItem = new OrderItem([
+                // Tạo order items
+                foreach ($variantsData as $data) {
+                    $variant = $data['variant'];
+                    $quantity = $data['quantity'];
+                    $subtotal = $variant->price * $quantity;
+
+                    $orderItem = new OrderItem([
+                        'order_id' => $order->id,
+                        'product_id' => $variant->product_id,
+                        'product_variant_id' => $variant->id,
+                        'quantity' => $quantity,
+                        'unit_price' => $variant->price,
+                        'total_price' => $variant->price * $quantity,
+                        'subtotal' => $subtotal
+                    ]);
+                    $orderItem->save();
+                }
+
+                // Nếu thanh toán qua VNPAY
+                if ($request->payment_method === PaymentMethod::VNPAY->value) {
+                    $vnpayUrl = $this->createVnpayPaymentUrl($order->id, $total_amount_vnd, $order->order_number);
+                    DB::commit();
+                    return response()->json([
+                        'payment_url' => $vnpayUrl,
+                        'order_id' => $order->id
+                    ], 200);
+                }
+
+                // Cập nhật số lượng tồn kho cho các phương thức thanh toán khác
+                foreach ($variantsData as $data) {
+                    $variant = $data['variant'];
+                    $quantity = $data['quantity'];
+                    $variant->stock_quantity -= $quantity;
+                    $variant->save();
+                }
+
+                // Tạo transaction cho COD
+                $transaction = new Transaction([
                     'order_id' => $order->id,
-                    'product_id' => $variant->product_id,
-                    'variant_id' => $variant->id,
-                    'quantity' => $quantity,
-                    'unit_price' => $variant->price,
-                    'total_price' => $variant->price * $quantity,
+                    'transaction_type' => 'payment',
+                    'payment_method' => $request->payment_method,
+                    'gateway_transaction_id' => 'TXN-' . strtoupper(Str::random(12)) . '-' . time(),
+                    'amount' => $total_amount,
+                    'currency' => 'USD',
+                    'status' => 'pending'
                 ]);
-                $orderItem->save();
+                $transaction->save();
 
-                // Cập nhật số lượng tồn kho
-                $variant->stock_quantity -= $quantity;
-                $variant->save();
+                DB::commit();
+                return response()->json($order->load('orderItems'), 201);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['error' => $e->getMessage()], 422);
             }
-
-            DB::commit();
-            return response()->json($order->load('orderItems'), 201);
-
         } catch (\Exception $e) {
-            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 422);
         }
+    }
+
+    private function createVnpayPaymentUrl($orderId, $amount, $txnRef)
+    {
+        $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+        $vnp_ReturnUrl = config('app.url') . "/api/vnpay/callback?orderId=$orderId";
+        $vnp_TmnCode = config('services.vnpay.tmn_code');
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+
+        $vnp_OrderInfo = "Payment for order";
+        $vnp_OrderType = "billpayment";
+        $vnp_Amount = $amount * 100; // VNPAY yêu cầu số tiền * 100
+        $vnp_Locale = "vn";
+        $vnp_IpAddr = request()->ip();
+        $vnp_CreateDate = date('YmdHis');
+
+        $inputData = array(
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => $vnp_CreateDate,
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_OrderType" => $vnp_OrderType,
+            "vnp_ReturnUrl" => $vnp_ReturnUrl,
+            "vnp_TxnRef" => $txnRef,
+        );
+
+        ksort($inputData);
+        $query = "";
+        $i = 0;
+        $hashdata = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashdata .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+            $query .= urlencode($key) . "=" . urlencode($value) . '&';
+        }
+
+        $vnp_Url = $vnp_Url . "?" . $query;
+        $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+        $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+
+        return $vnp_Url;
     }
 
     /**
@@ -226,6 +313,7 @@ class OrderController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
             'cancellation_reason' => 'nullable|string',
         ]);
 

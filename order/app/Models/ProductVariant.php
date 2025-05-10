@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 class ProductVariant extends Model
 {
     use HasFactory;
-    use Sluggable;
     use ModelBlamer;
 
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];

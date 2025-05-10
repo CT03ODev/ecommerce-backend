@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderItemController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\VNPayController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,13 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/order-items/{id}', [OrderItemController::class, 'update']);
     Route::delete('/order-items/{id}', [OrderItemController::class, 'destroy']);
     
-    // Payments
-    Route::get('/payments', [PaymentController::class, 'index']);
-    Route::post('/payments', [PaymentController::class, 'store']);
-    Route::get('/payments/{id}', [PaymentController::class, 'show']);
-    Route::put('/payments/{id}/status', [PaymentController::class, 'updateStatus']);
-    Route::get('/orders/{orderId}/payments', [PaymentController::class, 'getOrderPayments']);
 });
+
+Route::get('/vnpay/callback', [VNPayController::class, 'callback'])->name('vnpay.callback');
 
 Route::fallback(function () {
     return response()->json([

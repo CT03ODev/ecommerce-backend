@@ -19,7 +19,7 @@
     RewriteCond %{REQUEST_URI} ^/api/orders(.*)$ [NC]
     RewriteRule ^(.*)$ /order/public/index.php/$1 [L]
 
-    RewriteCond %{REQUEST_URI} ^/api/payments(.*)$ [NC]
+    RewriteCond %{REQUEST_URI} ^/api/vnpay(.*)$ [NC]
     RewriteRule ^(.*)$ /order/public/index.php/$1 [L]
 
     RewriteCond %{REQUEST_URI} ^/(.*)$ [NC]

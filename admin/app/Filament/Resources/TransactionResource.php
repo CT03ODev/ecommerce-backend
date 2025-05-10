@@ -21,18 +21,23 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('payment_id')
-                    ->relationship('payment', 'id')
+                Forms\Components\Select::make('order_id')
+                    ->relationship('order', 'order_number')
                     ->required(),
                 Forms\Components\TextInput::make('transaction_type')
+                    ->required(),
+                Forms\Components\TextInput::make('payment_method')
                     ->required(),
                 Forms\Components\TextInput::make('amount')
                     ->numeric()
                     ->required(),
+                Forms\Components\TextInput::make('currency')
+                    ->default('USD')
+                    ->required(),
                 Forms\Components\TextInput::make('status')
                     ->required(),
-                Forms\Components\KeyValue::make('transaction_details')
-                    ->required(),
+                Forms\Components\KeyValue::make('gateway_response'),
+                Forms\Components\KeyValue::make('gateway_error'),
             ]);
     }
 
@@ -40,8 +45,9 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('payment.id'),
+                Tables\Columns\TextColumn::make('order.order_number'),
                 Tables\Columns\TextColumn::make('transaction_type'),
+                Tables\Columns\TextColumn::make('payment_method'),
                 Tables\Columns\TextColumn::make('amount'),
                 Tables\Columns\TextColumn::make('status'),
                 Tables\Columns\TextColumn::make('created_at')

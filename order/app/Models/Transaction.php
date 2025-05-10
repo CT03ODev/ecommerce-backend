@@ -11,8 +11,9 @@ class Transaction extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'payment_id',
+        'order_id',
         'transaction_type',
+        'payment_method',
         'gateway_transaction_id',
         'amount',
         'currency',
@@ -29,8 +30,8 @@ class Transaction extends Model
         'gateway_error' => 'array',
     ];
 
-    public function payment()
+    public function order()
     {
-        return $this->belongsTo(Payment::class);
+        return $this->belongsTo(Order::class);
     }
 }
