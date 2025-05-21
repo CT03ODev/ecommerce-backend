@@ -12,6 +12,12 @@ enum OrderStatus: string
     
     public static function values(): array
     {
-        return array_column(self::cases(), 'value');
+        return [
+            self::PENDING->value => 'Pending',
+            self::PROCESSING->value => 'Processing',
+            self::SHIPPED->value => 'Shipped',
+            self::DELIVERED->value => 'Delivered',
+            self::CANCELLED->value => 'Cancelled',
+        ];
     }
 }

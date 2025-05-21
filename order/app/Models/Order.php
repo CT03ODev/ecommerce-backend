@@ -44,4 +44,9 @@ class Order extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function voucher()
+    {
+        return $this->belongsTo(Voucher::class);
+    }
 }

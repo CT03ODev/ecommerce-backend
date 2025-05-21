@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\Transaction;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -20,15 +21,24 @@ class OrderController extends Controller
     /**
      * Display a listing of orders.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
         $userId = $request->user()->id;
-        $orders = Order::with(['orderItems'])
-            ->where('user_id', $userId)
-            ->latest()
-            ->get();
+        $query = Order::with(['orderItems'])
+            ->where('user_id', $userId);
+            
+        // Nếu có status được truyền vào thì query theo status đó
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        } else {
+            // Mặc định lấy các đơn hàng đang pending
+            $query->where('status', OrderStatus::PENDING->value);
+        }
+        
+        $orders = $query->latest()->get();
         
         return response()->json($orders);
     }
@@ -48,7 +58,8 @@ class OrderController extends Controller
             'quantities' => 'required|array',
             'quantities.*' => 'required|integer|min:1',
             'payment_method' => ['required', new Enum(PaymentMethod::class)],
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'voucher_code' => 'nullable|string|exists:vouchers,code'
         ]);
 
         if ($validator->fails()) {
@@ -78,10 +89,28 @@ class OrderController extends Controller
                 ];
             }
 
+            // Xử lý voucher nếu có
+            $discount_amount = 0;
+            if ($request->has('voucher_code')) {
+                $voucher = Voucher::where('code', $request->voucher_code)->first();
+                
+                if (!$voucher->isValid()) {
+                    return response()->json(['error' => 'Voucher không hợp lệ hoặc đã hết hạn'], 422);
+                }
+
+                if ($voucher->minimum_spend && $subtotal < $voucher->minimum_spend) {
+                    return response()->json([
+                        'error' => 'Giá trị đơn hàng chưa đạt mức tối thiểu để sử dụng voucher',
+                        'minimum_spend' => $voucher->minimum_spend
+                    ], 422);
+                }
+
+                $discount_amount = $voucher->calculateDiscount($subtotal);
+            }
+
             // Tính các khoản phí
             $tax_amount = $subtotal * 0.05; // 5% tax
             $shipping_amount = 10; // $10 shipping fee
-            $discount_amount = 0; // No discount for now
             $total_amount = $subtotal + $tax_amount + $shipping_amount - $discount_amount;
 
             // Chuyển đổi sang VND cho VNPAY (1 USD = 24,500 VND)
@@ -103,6 +132,14 @@ class OrderController extends Controller
                     : OrderStatus::PENDING->value;
                 $order->notes = $request->notes;
                 $order->created_by = $request->user()->id;
+                
+                // Liên kết voucher nếu có
+                if (isset($voucher)) {
+                    $order->voucher_id = $voucher->id;
+                    // Tăng số lần sử dụng của voucher
+                    $voucher->increment('usage_count');
+                }
+
                 $order->save();
 
                 // Tạo order items
@@ -154,7 +191,7 @@ class OrderController extends Controller
                 $transaction->save();
 
                 DB::commit();
-                return response()->json($order->load('orderItems'), 201);
+                return response()->json($order->load('orderItems', 'voucher'), 201);
 
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -225,7 +262,7 @@ class OrderController extends Controller
     {
         $userId = $request->user()->id;
         
-        $order = Order::with(['address', 'orderItems', 'payments'])
+        $order = Order::with(['address', 'orderItems.product', 'orderItems.productVariant'])
             ->where('id', $id)
             ->where('user_id', $userId)
             ->first();

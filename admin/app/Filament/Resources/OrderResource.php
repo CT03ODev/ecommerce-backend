@@ -234,8 +234,15 @@ class OrderResource extends Resource
                     ])
                     ->action(function (Order $record, array $data): void {
                         $record->update(['status' => $data['status']]);
+                        
+                        // Nếu trạng thái là delivered, cập nhật transaction sang completed
+                        if ($data['status'] === OrderStatus::DELIVERED->value) {
+                            $record->transactions()
+                                ->where('status', '!=', 'completed')
+                                ->update(['status' => 'completed']);
+                        }
                     })
-                    ->visible(fn (Order $record): bool => $record->status !== OrderStatus::SHIPPED->value),
+                    ->visible(fn (Order $record): bool => $record->status !== OrderStatus::DELIVERED->value),
             ])
             ->bulkActions([])
             ->defaultSort('created_at', 'desc');

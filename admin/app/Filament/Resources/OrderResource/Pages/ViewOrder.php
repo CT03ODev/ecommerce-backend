@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OrderResource\Pages;
 
+use App\Enums\OrderStatus;
 use App\Filament\Resources\OrderResource;
 use Filament\Actions;
 use Filament\Forms\Components\Select;
@@ -95,18 +96,20 @@ class ViewOrder extends ViewRecord
                 ->label('Change Status')
                 ->form([
                     Select::make('status')
-                        ->options([
-                            'pending' => 'Pending',
-                            'processing' => 'Processing',
-                            'completed' => 'Completed',
-                            'cancelled' => 'Cancelled',
-                        ])
+                        ->options(OrderStatus::values())
                         ->required(),
                 ])
                 ->action(function (array $data): void {
                     $this->record->update(['status' => $data['status']]);
+                    
+                    // Nếu trạng thái là delivered, cập nhật transaction sang completed
+                    if ($data['status'] === OrderStatus::DELIVERED->value) {
+                        $this->record->transactions()
+                            ->where('status', '!=', 'completed')
+                            ->update(['status' => 'completed']);
+                    }
                 })
-                ->visible(fn (): bool => $this->record->status !== 'completed'),
+                ->visible(fn (): bool => $this->record->status !== OrderStatus::DELIVERED->value),
         ];
     }
 }

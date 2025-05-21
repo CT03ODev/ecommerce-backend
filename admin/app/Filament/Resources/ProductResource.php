@@ -112,7 +112,7 @@ class ProductResource extends Resource
                                         }
                                     })
                                     ->formatStateUsing(function ($component, $record, $state) {
-                                        return $record->images->pluck('image')->toArray();
+                                        return $record?->images->pluck('image')->toArray();
                                     }),
                             ])
                             ->label('Add Variant')

@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Resources\BlogCategoryResource;
 use App\Filament\Resources\BlogPostResource;
 use App\Filament\Resources\UserResource;
+use App\Filament\Widgets\AdvancedRevenueChart;
 use App\Http\Middleware\Authenticate;
 use App\Providers\Filament\CustomAvatarsProvider;
 // use Filament\Http\Middleware\Authenticate;
@@ -26,7 +27,11 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use App\Filament\Widgets\StatsOverview;
+use App\Filament\Widgets\ProductBrandChart;
+use App\Filament\Widgets\ProductStatsOverview;
+use App\Filament\Widgets\UserStatsOverview;
+use App\Filament\Widgets\ProductCategoryChart;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -50,8 +55,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                StatsOverview::class,
+                AdvancedRevenueChart::class,
+                ProductStatsOverview::class,
+                UserStatsOverview::class,
+                ProductCategoryChart::class,
+                ProductBrandChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,
