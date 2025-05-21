@@ -388,4 +388,47 @@ class OrderController extends Controller
         
         return response()->json($orders);
     }
+
+    /**
+     * Validate a voucher code.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function validateVoucher(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|exists:vouchers,code',
+            'subtotal' => 'required|numeric|min:0'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $voucher = Voucher::where('code', $request->code)->first();
+        
+        if (!$voucher->isValid()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Voucher is not valid or has expired'
+            ], 422);
+        }
+
+        if ($voucher->minimum_spend && $request->subtotal < $voucher->minimum_spend) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Order value does not meet the minimum spend requirement',
+                'minimum_spend' => $voucher->minimum_spend
+            ], 422);
+        }
+
+        $discount_amount = $voucher->calculateDiscount($request->subtotal);
+
+        return response()->json([
+            'valid' => true,
+            'voucher' => $voucher,
+            'discount_amount' => $discount_amount
+        ]);
+    }
 }
