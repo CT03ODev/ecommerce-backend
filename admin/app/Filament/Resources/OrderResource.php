@@ -246,7 +246,7 @@ class OrderResource extends Resource
                                 ->update(['status' => 'refunded']);
                         }
                     })
-                    ->visible(fn (Order $record): bool => $record->status !== OrderStatus::DELIVERED->value),
+                    ->visible(fn (Order $record): bool => $record->status !== OrderStatus::DELIVERED->value || $record->status!== OrderStatus::CANCELLED->value),
             ])
             ->bulkActions([])
             ->defaultSort('created_at', 'desc');

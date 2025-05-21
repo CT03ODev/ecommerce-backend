@@ -113,7 +113,7 @@ class ViewOrder extends ViewRecord
                             ->update(['status' => 'refunded']);
                     }
                 })
-                ->visible(fn (): bool => $this->record->status !== OrderStatus::DELIVERED->value),
+                ->visible(fn (): bool => $this->record->status !== OrderStatus::DELIVERED->value || $this->record->status!== OrderStatus::CANCELLED->value),
         ];
     }
 }
