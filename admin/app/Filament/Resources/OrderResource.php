@@ -240,6 +240,10 @@ class OrderResource extends Resource
                             $record->transactions()
                                 ->where('status', '!=', 'completed')
                                 ->update(['status' => 'completed']);
+                        } else if ($data['status'] === OrderStatus::CANCELLED->value) {
+                            $record->transactions()
+                                ->where('status', '!=', 'refunded')
+                                ->update(['status' => 'refunded']);
                         }
                     })
                     ->visible(fn (Order $record): bool => $record->status !== OrderStatus::DELIVERED->value),

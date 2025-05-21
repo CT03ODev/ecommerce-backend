@@ -107,6 +107,10 @@ class ViewOrder extends ViewRecord
                         $this->record->transactions()
                             ->where('status', '!=', 'completed')
                             ->update(['status' => 'completed']);
+                    } else if ($data['status'] === OrderStatus::CANCELLED->value) {
+                        $this->record->transactions()
+                            ->where('status', '!=', 'refunded')
+                            ->update(['status' => 'refunded']);
                     }
                 })
                 ->visible(fn (): bool => $this->record->status !== OrderStatus::DELIVERED->value),
