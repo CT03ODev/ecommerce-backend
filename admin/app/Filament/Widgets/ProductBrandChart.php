@@ -23,7 +23,8 @@ class ProductBrandChart extends ChartWidget
                     'data' => $brands->pluck('products_count')->values()->toArray(),
                     'backgroundColor' => [
                         '#10B981', '#3B82F6', '#F59E0B', '#EF4444',
-                        '#6366F1', '#8B5CF6', '#EC4899', '#14B8A6'
+                        '#6366F1', '#8B5CF6', '#EC4899', '#14B8A6',
+                        '#854d0e', '#065f46', '#713f12', '#0891b2'
                     ],
                 ],
             ],

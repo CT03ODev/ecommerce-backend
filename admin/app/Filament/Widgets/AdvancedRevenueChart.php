@@ -39,7 +39,7 @@ class AdvancedRevenueChart extends ChartWidget
                 [
                     'label' => 'Revenue',
                     'data' => array_values($data['revenues']),
-                    'borderColor' => '#10B981',
+                    // 'borderColor' => '#10B981',
                     'fill' => 'false',
                     'tension' => 0.1
                 ],
@@ -126,57 +126,5 @@ class AdvancedRevenueChart extends ChartWidget
     protected function getType(): string
     {
         return 'line';
-    }
-
-    protected function getOptions(): array
-    {
-        return [
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'ticks' => [
-                        'callback' => 'function(value) { return "$" + value.toLocaleString(); }'
-                    ],
-                    'grid' => [
-                        'color' => '#e5e7eb',
-                        'drawBorder' => false,
-                    ],
-                    'border' => [
-                        'dash' => [4, 4],
-                    ],
-                ],
-                'x' => [
-                    'grid' => [
-                        'display' => false,
-                    ],
-                ],
-            ],
-            'plugins' => [
-                'legend' => [
-                    'display' => true,
-                ],
-                'tooltip' => [
-                    'mode' => 'index',
-                    'intersect' => false,
-                    'callbacks' => [
-                        'label' => 'function(context) { 
-                            return "Revenue: $" + context.raw.toLocaleString(); 
-                        }',
-                        'title' => 'function(context) {
-                            return context[0].label;
-                        }'
-                    ]
-                ]
-            ],
-            'interaction' => [
-                'mode' => 'nearest',
-                'axis' => 'x',
-                'intersect' => false
-            ],
-            'hover' => [
-                'mode' => 'nearest',
-                'intersect' => false
-            ]
-        ];
     }
 }
